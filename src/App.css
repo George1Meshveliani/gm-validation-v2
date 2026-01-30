@@ -70,6 +70,94 @@
   margin-bottom: 1rem;
 }
 
+.run-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.25rem;
+  margin-bottom: 1rem;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: var(--font-sans);
+}
+
+.run-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(124, 110, 246, 0.1);
+}
+
+.run-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.answer-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.answer-section h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+.output-block {
+  margin-bottom: 1rem;
+}
+
+.output-block:last-child {
+  margin-bottom: 0;
+}
+
+.output-block strong {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.output-block pre {
+  margin: 0;
+  padding: 0.75rem;
+  background: var(--bg-dark);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.output-block pre.stderr {
+  color: var(--error);
+}
+
+.problem-select {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.problem-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 /* Problem input */
 .problem-input {
   width: 100%;
@@ -140,6 +228,55 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.matched-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.25rem;
+}
+
+.answer-comparison {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.answer-comparison h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 600px) {
+  .comparison-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comparison-status {
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.5rem 0;
+}
+
+.comparison-status.match {
+  color: var(--success);
+}
+
+.comparison-status.no-match {
+  color: var(--error);
 }
 
 .score-card {

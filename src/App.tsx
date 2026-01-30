@@ -1,20 +1,21 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
 import { validateCCode, type ValidationResult } from './validation'
+import { seedProblemsIfNeeded, getStoredProblems, findMatchingProblem } from './problems'
+import { runCCode } from './runCode'
 import './App.css'
 
-const DEFAULT_PROBLEM = `Write a C program that:
-1. Reads two integers from the user
-2. Prints their sum
-3. Returns 0 from main()`
+const DEFAULT_PROBLEM = `Print all numbers from 1 to N that are divisible by K (use N = 120, K = 4).`
 
 const DEFAULT_CODE = `#include <stdio.h>
 
 int main() {
-    int a, b;
-    printf("Enter two numbers: ");
-    scanf("%d %d", &a, &b);
-    printf("Sum: %d\\n", a + b);
+    int N = 120, K = 4, i;
+    for (i = 1; i <= N; i++) {
+        if (i % K == 0)
+            printf("%d ", i);
+    }
+    printf("\\n");
     return 0;
 }`
 
@@ -23,17 +24,48 @@ function App() {
   const [code, setCode] = useState(DEFAULT_CODE)
   const [validation, setValidation] = useState<ValidationResult | null>(null)
   const [isValidating, setIsValidating] = useState(false)
+  const [isRunning, setIsRunning] = useState(false)
+  const [runOutput, setRunOutput] = useState<{ stdout: string; stderr: string } | null>(null)
+  const [expectedOutput, setExpectedOutput] = useState<string | null>(null)
+  const [problemList, setProblemList] = useState<{ problem: string; solution: string }[]>([])
 
-  const handleValidate = useCallback(() => {
+  useEffect(() => {
+    seedProblemsIfNeeded()
+    setProblemList(getStoredProblems())
+  }, [])
+
+  const handleRun = useCallback(async () => {
+    setIsRunning(true)
+    setRunOutput(null)
+    setExpectedOutput(null)
+    const problems = getStoredProblems()
+    const matched = findMatchingProblem(problem, problems)
+    const stdin = (matched as { stdin?: string })?.stdin ?? ''
+    const result = await runCCode(code, stdin)
+    setRunOutput({ stdout: result.stdout, stderr: result.stderr })
+    if (matched && 'expectedOutput' in matched && matched.expectedOutput) {
+      setExpectedOutput(matched.expectedOutput)
+    }
+    setIsRunning(false)
+  }, [problem, code])
+
+  const handleValidate = useCallback(async () => {
     setIsValidating(true)
     setValidation(null)
-    // Simulate async validation (replace with API call for real validation)
-    setTimeout(() => {
-      const result = validateCCode(code)
+    try {
+      const result = await validateCCode(problem, code)
       setValidation(result)
+    } catch (err) {
+      setValidation({
+        score: 0,
+        mistakes: [err instanceof Error ? err.message : 'Validation failed'],
+        summary: 'An error occurred during validation.',
+        matchedProblem: null,
+      })
+    } finally {
       setIsValidating(false)
-    }, 600)
-  }, [code])
+    }
+  }, [problem, code])
 
   return (
     <div className="app">
@@ -49,6 +81,28 @@ function App() {
             <h2>Task / Problem</h2>
           </div>
           <p className="section-desc">Enter the coding problem description (C language)</p>
+          {problemList.length > 0 && (
+            <select
+              className="problem-select"
+              value=""
+              onChange={(e) => {
+                const idx = e.target.selectedIndex - 1
+                if (idx >= 0) {
+                  const p = problemList[idx]
+                  setProblem(p.problem)
+                  setCode('#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}')
+                }
+                e.target.value = ''
+              }}
+            >
+              <option value="">— Load problem from bank —</option>
+              {problemList.map((p, i) => (
+                <option key={i} value={p.problem}>
+                  {p.problem.length > 60 ? p.problem.slice(0, 57) + '...' : p.problem}
+                </option>
+              ))}
+            </select>
+          )}
           <textarea
             className="problem-input"
             value={problem}
@@ -65,6 +119,13 @@ function App() {
             <h2>Your Solution</h2>
           </div>
           <p className="section-desc">Write your C code below</p>
+          <button
+            className="run-btn"
+            onClick={handleRun}
+            disabled={isRunning}
+          >
+            {isRunning ? 'Running...' : 'Run'}
+          </button>
           <div className="editor-wrapper">
             <Editor
               height="400px"
@@ -85,6 +146,29 @@ function App() {
               }}
             />
           </div>
+          {(runOutput || expectedOutput) && (
+            <div className="answer-section">
+              <h3>Output</h3>
+              {runOutput && (
+                <div className="output-block">
+                  <strong>Your output:</strong>
+                  <pre>{runOutput.stdout || '(empty)'}</pre>
+                  {runOutput.stderr && (
+                    <>
+                      <strong>Errors:</strong>
+                      <pre className="stderr">{runOutput.stderr}</pre>
+                    </>
+                  )}
+                </div>
+              )}
+              {expectedOutput != null && (
+                <div className="output-block">
+                  <strong>Expected output:</strong>
+                  <pre>{expectedOutput}</pre>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         <section className="section">
@@ -104,6 +188,31 @@ function App() {
 
           {validation && (
             <div className="validation-result">
+              {validation.matchedProblem && (
+                <p className="matched-hint">Matched: {validation.matchedProblem}</p>
+              )}
+
+              {(validation.userOutput !== undefined || validation.expectedOutput !== undefined) && (
+                <div className="answer-comparison">
+                  <h3>Answer comparison</h3>
+                  <div className="comparison-row">
+                    <div className="output-block">
+                      <strong>Your answer:</strong>
+                      <pre>{validation.userOutput ?? '(no output)'}</pre>
+                    </div>
+                    <div className="output-block">
+                      <strong>Expected answer:</strong>
+                      <pre>{validation.expectedOutput ?? '—'}</pre>
+                    </div>
+                  </div>
+                  <p className={`comparison-status ${validation.outputMatched ? 'match' : 'no-match'}`}>
+                    {validation.outputMatched
+                      ? '✓ Answers match — score based on code logic and similarity'
+                      : '✗ Answers differ — 0% (fix your output first)'}
+                  </p>
+                </div>
+              )}
+
               <div className="score-card">
                 <div
                   className={`score-circle ${

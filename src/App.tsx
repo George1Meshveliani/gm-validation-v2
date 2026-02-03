@@ -27,12 +27,17 @@ function App() {
   const [isRunning, setIsRunning] = useState(false)
   const [runOutput, setRunOutput] = useState<{ stdout: string; stderr: string } | null>(null)
   const [expectedOutput, setExpectedOutput] = useState<string | null>(null)
+  const [referenceSolution, setReferenceSolution] = useState<string | null>(null)
   const [problemList, setProblemList] = useState<{ problem: string; solution: string }[]>([])
 
   useEffect(() => {
     seedProblemsIfNeeded()
     setProblemList(getStoredProblems())
   }, [])
+
+  useEffect(() => {
+    setReferenceSolution(null)
+  }, [problem])
 
   const handleRun = useCallback(async () => {
     setIsRunning(true)
@@ -66,6 +71,22 @@ function App() {
       setIsValidating(false)
     }
   }, [problem, code])
+
+  const handleShowSolution = useCallback(() => {
+    const problems = getStoredProblems()
+    const matched = findMatchingProblem(problem, problems)
+    if (matched?.solution) {
+      setReferenceSolution(matched.solution)
+    } else {
+      setReferenceSolution(null)
+    }
+  }, [problem])
+
+  const handleHideSolution = useCallback(() => {
+    setReferenceSolution(null)
+  }, [])
+
+  const hasMatchingProblem = problemList.length > 0 && findMatchingProblem(problem, problemList)
 
   return (
     <div className="app">
@@ -178,13 +199,30 @@ function App() {
           </div>
           <p className="section-desc">Check how well your code addresses the problem</p>
 
-          <button
-            className="validate-btn"
-            onClick={handleValidate}
-            disabled={isValidating}
-          >
-            {isValidating ? 'Validating...' : 'Validate Code'}
-          </button>
+          <div className="validation-actions">
+            <button
+              className="validate-btn"
+              onClick={handleValidate}
+              disabled={isValidating}
+            >
+              {isValidating ? 'Validating...' : 'Validate Code'}
+            </button>
+            {hasMatchingProblem && (
+              <button
+                className="show-solution-btn"
+                onClick={referenceSolution ? handleHideSolution : handleShowSolution}
+              >
+                {referenceSolution ? 'Hide solution' : 'Show solution'}
+              </button>
+            )}
+          </div>
+
+          {referenceSolution && (
+            <div className="reference-solution-section">
+              <h3>Reference solution</h3>
+              <pre className="solution-code">{referenceSolution}</pre>
+            </div>
+          )}
 
           {validation && (
             <div className="validation-result">

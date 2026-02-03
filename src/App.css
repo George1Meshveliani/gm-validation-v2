@@ -222,6 +222,60 @@
   cursor: not-allowed;
 }
 
+.validation-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.show-solution-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.875rem 1.5rem;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: var(--font-sans);
+}
+
+.show-solution-btn:hover {
+  border-color: var(--accent);
+  background: rgba(124, 110, 246, 0.1);
+}
+
+.reference-solution-section {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.reference-solution-section h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+.solution-code {
+  margin: 0;
+  padding: 1rem;
+  background: var(--bg-dark);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.5;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
 /* Validation result */
 .validation-result {
   margin-top: 1.5rem;
